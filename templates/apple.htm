@@ -27,7 +27,11 @@
     <div class="content">
 
       <p><i>Hello, <span class="account fullname">{{ foaf['fullname'] }}</span> <span class="account email">&lt;{{ foaf['email'] }}&gt;</span></i></p>
-      <h3>You have <span class="balance">{{ total }} apples</span> reserved for you!</p>
+      <h3>You have <span class="balance">{{ total }} apple{{ 's' if total != 1 else '' }}</span> reserved!</h3>
+      {% for e in events: %}
+        <small>You gave one apple to <i>{{e['foaf']['fullname']}}
+&lt;{{e['foaf']['email']}}&gt;</i>.</small><br>
+      {% endfor %}
       {% for av in available: %}</h3>
       <div inputid="{{av['key']}}">
         <script type="text/javascript">
@@ -38,7 +42,10 @@
               var tx = {tx: '{{av['txid']}}', idx: {{av['idx']}}};
               var fullname = $(it).find('input[name="name"]').val();
               if (fullname == $(it).find('input[name="name"]').attr('title'))
-                 fullname = '';
+              {
+                 $(it).find('input[name="name"]').parent().effect('shake', {}, 'fast')
+                 return;
+              }
               var email = $(it).find('input[name="email"]').val();
               if (email == $(it).find('input[name="email"]').attr('title'))
                  email = '';
@@ -51,9 +58,9 @@
                  data: data,
                  success: function (data) {
                     var url = 'http://ln.soc1024.com:8191/a/'+data;
-                    $('#template_dialog').remove()
-                    $.tmpl('dialog', {url: url}).appendTo('body');
-                    $('#template_dialog').dialog({modal: true, width:600,
+                    $('#template_dialog_').remove()
+                    $.tmpl('dialog', {url: url, name: fullname}).appendTo('body');
+                    $('#template_dialog_').dialog({modal: true, width:600,
                                title: 'Reservation transferred',
                                buttons:[{text: 'OK', click: function () { $(this).dialog('close'); }}],
                                close: function () { window.location.href='' } })
@@ -63,10 +70,10 @@
           })
         </script>
         <div id="template_dialog">
-          <div style="display:none" id="template_dialog">
-            Copy this url and send it to your friend:
+          <div style="display:none" id="template_dialog_">
+            Copy this url and send it to your friend "${name}":
 <p>
-          "I've reserved an apple for you! Visit this url to see details: ${url}."
+          I'm saving an apple for you! Visit this url to see details: ${url}
           </div>
         </div>
         <div class="issuance">
@@ -83,13 +90,11 @@
           </div>
         </div>
         <div>
+          <div><input type="text" class="hint" name="name" title="Name"/><input type="text" name="email" title="E-mail address (optional)"> </div>
           <input class="awesome large blue transfer button" enabled="no" type="button" value="Send one of your reservations to a friend..."/></div>
-        <div><input type="text" class="hint" name="name" title="Name (optional)"/><input type="text" name="email" title="E-mail address (optional)"> </div>
-          
           <!--<div><input type="button" value="Cancel (up to 10) of your reservations"> *send them back to andrew</div>-->
         </div>
         {% endfor %}
     </div>
-
   </body>
 </html>

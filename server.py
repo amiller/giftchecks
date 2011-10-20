@@ -33,7 +33,8 @@ reload(service)
 
 if 'serv' not in globals(): serv = None
 else: del serv
-if 'gate' not in globals(): gate = None
+if 'gate' not in globals():
+    gate = None
 else: gate.stop(); del gate
 
 app = None
@@ -43,7 +44,21 @@ clients = {}
 
 
 def startapp(args):
-    global app, dbT, gate, serv
+    global app, dbT, gate, serv, isue2
+
+    def isue2(name='ndMw-fJkTb52jbUnv6QhFpc5'):
+        client = gate.get_client(name)
+        labnames = json.load(open('labnames.js'))
+        for n,email in labnames.iteritems():
+            avs = gate.db.hgetall('client:%s:available' % name)
+            key = avs.keys()[0]
+            tx,idx = key.split(':')
+            tx = {'tx':tx, 'idx': int(idx)}
+            dst = gate.new_client(foaf={'fullname':n, 'email':email})
+            dstkey = dst.new_key()
+            client.transfer_giftcheck(tx, 3, dstkey)
+            print email, n, 'http://ln.soc1024.com:8191/a/%s/' % dst.name
+            gevent.sleep(0.5)
 
     db_ = redis.Redis(port=args.redis_port, db=0)
     dbT = redis.Redis(port=args.redis_port, db=1)
@@ -67,7 +82,8 @@ def startapp(args):
         A.issue_giftcheck("""I'm bringing 48 apples in total to give out at
         the lab meeting this Friday. This week I got a good deal on
         organic Gala apples from Orlando Organics,
-        about $30 for them.""", 48)
+        about $30 for the lot. They're sweeter but smaller than
+        the ones from last week.""", 48)
         return flask.redirect('/a/%s/' % A.name)
 
     @app.route('/p/<name>/tx', methods=['POST'])
@@ -104,11 +120,31 @@ def startapp(args):
             t['idx'] = int(idx)
             _available.append(t)
             total += t['value']
+        mytxes = []
+        events = []
+        for txid in gate.db.smembers('client:%s:mytx' % client.name):
+            tx = json.loads(gate.db.hget('tx', txid))
+            tx['payload'] = json.loads(tx['payload'])
+            print tx
+            for o in tx['payload']['outputs']:
+                pubkey = o['pubkey']
+                value = o['value']
+                ckey = gate.db.hget('keysclients', pubkey)
+                if ckey == client.name:
+                    continue
+                if ckey:
+                    foaf = json.loads(gate.db.get('client:%s:foaf' % ckey))
+                else:
+                    foaf = {'fullname':'anonymous', 'email':''}
+                events.append({'value':value, 'foaf':foaf})
+                    
         foaf = client.get_foaf()
         kwargs = {'available': _available,
                   'foaf': foaf,
                   'total': total,
                   'name': name,
+                  'mytxes': mytxes,
+                  'events': events,
                   'json':json}
         
         return flask.render_template('apple.htm', **kwargs)

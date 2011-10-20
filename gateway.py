@@ -42,7 +42,8 @@ class Gateway(object):
                 assert itx['issuance'] == issuance
             issuance = itx['issuance']
             itx = json.loads(itx['payload'])
-            mytx['pubkey'] = itx['outputs'][i['idx']]
+            mytx['pubkey'] = itx['outputs'][i['idx']]['pubkey']
+
         if issuance is None: issuance = txid
         mytx['issuance'] = issuance
         self.db.hset('tx', txid, json.dumps(mytx))
@@ -62,9 +63,10 @@ class Gateway(object):
             self.db.hdel('client:%s:available' % ckey, inkey)
 
         # Add this transaction to user's history
-        ckey = self.db.hget('keysclients', pubkey)
-        if ckey:
-            self.db.hset('client:%s:mytx' % ckey, )
+        if 'pubkey' in mytx:
+            ckey = self.db.hget('keysclients', mytx['pubkey'])
+            if ckey:
+                self.db.sadd('client:%s:mytx' % ckey, txid)
 
         # Update the client info
         for idx in range(len(tx['outputs'])):
@@ -81,6 +83,7 @@ class Gateway(object):
         # Drop all the views so we can rebuild them
         self.db.delete(*self.db.keys('client:*:available'))
         self.db.delete('lastseen', 'tx')
+        self.db.delete(*self.db.keys('client:*:mytx'))
 
     def build_views(self):
         # Get the last seen
