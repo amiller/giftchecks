@@ -1,0 +1,49 @@
+body {
+  width: 100%;
+  font-family: sans-serif
+}
+
+div.content {
+  position:relative;
+  margin:0 auto;
+  width:500px
+}
+
+.issuance div.profile {
+  float:left;
+  margin:10px;
+  //border: solid black 1px  
+}
+
+img.profile {
+width: 50px;
+height: 50px;
+}
+
+div.issuance {
+  background:#cfc;
+  margin:10px
+}
+
+.issuance .description p {
+  min-height:100px
+}
+.issuance .description img {
+  height:150px
+}
+
+.awesome.red {
+  background-color: #e33100 !important;
+}
+.awesome.green {
+  background-color: #3ACC00 !important;
+}
+.awesome.blue {
+  background-color: #05f !important;
+  font-color: #333;
+}
+.awesome.small         { padding: 4px 7px 5px !important; font-size: 10px !important; }
+.awesome.small:active   { padding: 5px 7px 4px !important; }
+.awesome.large          { padding: 8px 14px 9px !important; font-size: 14px !important; }
+.awesome.large:active   { padding: 9px 14px 8px !important; }
+

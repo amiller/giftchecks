@@ -6,7 +6,7 @@ import Crypto.PublicKey.RSA as RSA
 import gevent
 
 
-def random_name(bytes=20):
+def random_name(bytes=18):
     return base64.urlsafe_b64encode(os.urandom(bytes))
 
 
@@ -17,11 +17,7 @@ class Gateway(object):
 
     def new_client(self, foaf={}):
         name = random_name()
-        client = {
-            'name': name,
-            'foaf': foaf,
-            }
-        self.db.set('client:%s:foaf' % name, json.dumps(client))
+        self.db.set('client:%s:foaf' % name, json.dumps(foaf))
         return self.get_client(name)
 
     def get_client(self, name):
@@ -45,6 +41,8 @@ class Gateway(object):
             if issuance is not None:
                 assert itx['issuance'] == issuance
             issuance = itx['issuance']
+            itx = json.loads(itx['payload'])
+            mytx['pubkey'] = itx['outputs'][i['idx']]
         if issuance is None: issuance = txid
         mytx['issuance'] = issuance
         self.db.hset('tx', txid, json.dumps(mytx))
@@ -62,6 +60,11 @@ class Gateway(object):
                 continue
             inkey = '%s:%s' % (i['tx'], i['idx'])
             self.db.hdel('client:%s:available' % ckey, inkey)
+
+        # Add this transaction to user's history
+        ckey = self.db.hget('keysclients', pubkey)
+        if ckey:
+            self.db.hset('client:%s:mytx' % ckey, )
 
         # Update the client info
         for idx in range(len(tx['outputs'])):
@@ -121,6 +124,10 @@ class Client(object):
         def get_data(self):
             db = self.gateway.db
             return db.hgetall('client:%s:available' % self.name)
+
+        def get_foaf(self):
+            db = self.gateway.db
+            return json.loads(db.get('client:%s:foaf' % self.name))
 
         def new_key(self):
             db = self.gateway.db

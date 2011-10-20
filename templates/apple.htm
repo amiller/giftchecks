@@ -1,0 +1,95 @@
+{% macro answers(user) -%}
+
+{% endmacro -%}
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"> 
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>GiftChecks</title>
+    <link rel="stylesheet" href="/css/giftcheck.css" type="text/css" media="all" />
+    <link rel="stylesheet" href="/css/awesome-buttons.css" type="text/css" media="all" />
+    <link rel="stylesheet" href="/css/ui-lightness/jquery-ui-1.8.14.custom.css" type="text/css" media="screen" />
+    <script type="text/javascript" src="/js/jquery-1.6.2.min.js"></script>
+    <script type="text/javascript" src="/js/jquery.tmpl.min.js"></script>
+    <script type="text/javascript" src="/js/jquery-ui-1.8.14.min.js"></script>
+    <script type="text/javascript" src="/js/apple.js"></script>
+    <script type="text/javascript">
+        $(function() {
+            $('#games').accordion({ change: function(event, ui) {
+                $(event.target).find('.post_questionnaires').accordion();
+            }});
+            $('#games div').first().find('.post_questionnaires').accordion();
+            $('input[title]').inputFieldText()
+        })
+    </script>
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+  </head>
+  <body>
+    <div class="content">
+
+      <p><i>Hello, <span class="account fullname">{{ foaf['fullname'] }}</span> <span class="account email">&lt;{{ foaf['email'] }}&gt;</span></i></p>
+      <h3>You have <span class="balance">{{ total }} apples</span> reserved for you!</p>
+      {% for av in available: %}</h3>
+      <div inputid="{{av['key']}}">
+        <script type="text/javascript">
+          $(function () {
+            $.template('dialog', $('#template_dialog'))
+            var it = $('[inputid="{{av['key']}}"]');
+            $(it).find('input.transfer').click(function () {
+              var tx = {tx: '{{av['txid']}}', idx: {{av['idx']}}};
+              var fullname = $(it).find('input[name="name"]').val();
+              if (fullname == $(it).find('input[name="name"]').attr('title'))
+                 fullname = '';
+              var email = $(it).find('input[name="email"]').val();
+              if (email == $(it).find('input[name="email"]').attr('title'))
+                 email = '';
+              var data = {input: JSON.stringify(tx),
+                          foaf: JSON.stringify({'fullname': fullname, 'email':email}),
+                          value: 1};
+              $.ajax({
+                 url: '/p/{{name}}/tx',
+                 type: 'post',
+                 data: data,
+                 success: function (data) {
+                    var url = 'http://ln.soc1024.com:8191/a/'+data;
+                    $('#template_dialog').remove()
+                    $.tmpl('dialog', {url: url}).appendTo('body');
+                    $('#template_dialog').dialog({modal: true, width:600,
+                               title: 'Reservation transferred',
+                               buttons:[{text: 'OK', click: function () { $(this).dialog('close'); }}],
+                               close: function () { window.location.href='' } })
+                 }
+              })
+            })
+          })
+        </script>
+        <div id="template_dialog">
+          <div style="display:none" id="template_dialog">
+            Copy this url and send it to your friend:
+<p>
+          "I've reserved an apple for you! Visit this url to see details: ${url}."
+          </div>
+        </div>
+        <div class="issuance">
+          <div class="profile">
+            <img class="profile" src="http://profile.ak.fbcdn.net/hprofile-ak-snc4/23215_5128990_4430_q.jpg"/><div class="name">Andrew Miller</div>
+          </div>
+          <div>
+            <div class="description">
+            <p>
+              {{ av['issuance']['payload']['data']['message'] }}
+            </p>
+            <img src="http://i.imgur.com/QdE4ll.jpg" style="margin:0 auto;display:block"/>
+            </div>
+          </div>
+        </div>
+        <div>
+          <input class="awesome large blue transfer button" enabled="no" type="button" value="Send one of your reservations to a friend..."/></div>
+        <div><input type="text" class="hint" name="name" title="Name (optional)"/><input type="text" name="email" title="E-mail address (optional)"> </div>
+          
+          <!--<div><input type="button" value="Cancel (up to 10) of your reservations"> *send them back to andrew</div>-->
+        </div>
+        {% endfor %}
+    </div>
+
+  </body>
+</html>
